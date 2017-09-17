@@ -23,39 +23,39 @@
 package org.riversun.oauth2.google;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 
 /**
+ * A class that gets/sets clientSecrets like "client_secret.json" downloaded
+ * from developer console<br>
+ * <p>
+ * Default clientSecrets path is "/client_secret.json"<br>
+ * If you want to specify path/filename of clientSecrets,call
+ * {@link OAuthSecrets#setClientSecrets} before OAuth2-flow stars.
+ * </p>
  * 
  * @author Tom Misawa (riversun.org@gmail.com)
- *
  */
-final class OAuthCommon {
+public class OAuthSecrets {
 
-    // SCOPE
-    static final List<String> SCOPES = new CopyOnWriteArrayList<String>();
+    private static GoogleClientSecrets sGoogleClientSecrets = null;
 
-    // Thread-safed
-    static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-
-    // Thread-safed
-    static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
-
-    static final GoogleAuthorizationCodeFlow createFlow() throws IOException {
-        return new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT,
-                JSON_FACTORY,
-                OAuthSecrets.getClientSecrets(),
-                SCOPES)
-                        .build();
+    public static void setClientSecrets(GoogleClientSecrets googleClientSecrets) {
+        sGoogleClientSecrets = googleClientSecrets;
     }
 
+    public static void setClientSecrets(String relativeFilePath) throws IOException {
+        final InputStream is = OAuthCommon.class.getResourceAsStream(relativeFilePath);
+        sGoogleClientSecrets = GoogleClientSecrets.load(OAuthCommon.JSON_FACTORY, new InputStreamReader(is));
+    }
+
+    public static GoogleClientSecrets getClientSecrets() throws IOException {
+        if (sGoogleClientSecrets == null) {
+            setClientSecrets("/client_secret.json");
+        }
+        return sGoogleClientSecrets;
+    }
 }
