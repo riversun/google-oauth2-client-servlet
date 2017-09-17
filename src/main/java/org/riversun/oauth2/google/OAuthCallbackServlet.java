@@ -199,9 +199,9 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
 		sessionScope(req, OAuthConst.SESSION_KEY_CREDENTIAL, credential);
 		sessionScope(req, OAuthConst.SESSION_KEY_OAUTH2_DONE, Boolean.TRUE);
 
-		String redirectPath = (String) sessionScope(req, OAuthConst.SESSION_KEY_REQUEST_URL);
+		String redirectPath = (String) sessionScope(req, OAuthConst.SESSION_KEY_REDIRECT_URL_AFTER_OAUTH);
 
-		sessionScope(req, OAuthConst.SESSION_KEY_REQUEST_URL, null);
+		sessionScope(req, OAuthConst.SESSION_KEY_REDIRECT_URL_AFTER_OAUTH, null);
 
 		if (redirectPath == null || redirectPath.isEmpty()) {
 			redirectPath = req.getContextPath() + "/";

@@ -30,12 +30,13 @@ package org.riversun.oauth2.google;
  */
 public final class OAuthConst {
 
-	public static final String SESSION_KEY_CREDENTIAL = "org.riversun.goauth.session_key_credential";
-	public static final String SESSION_KEY_ID_TOKEN = "org.riversun.goauth.session_key_id_token";
-	public static final String SESSION_KEY_UNIQUE_USER_ID = "org.riversun.goauth.session_key_payload_sub";
+    static final String SESSION_KEY_CREDENTIAL = "org.riversun.goauth.session_key_credential";
+    static final String SESSION_KEY_ID_TOKEN = "org.riversun.goauth.session_key_id_token";
+    static final String SESSION_KEY_UNIQUE_USER_ID = "org.riversun.goauth.session_key_payload_sub";
 
-	static final String SESSION_KEY_OAUTH2_STATE_TOKEN = "org.riversun.goauth.session_key_oauth2_state_token";
-	static final String SESSION_KEY_OAUTH2_DONE = "org.riversun.goauth.session_key_oauth2_done";
-	static final String SESSION_KEY_REQUEST_URL = "org.riversun.goauth.session_key_auth_requst_url";
+    static final String SESSION_KEY_OAUTH2_STATE_TOKEN = "org.riversun.goauth.session_key_oauth2_state_token";
+
+    static final String SESSION_KEY_OAUTH2_DONE = "org.riversun.goauth.session_key_oauth2_done";
+    static final String SESSION_KEY_REDIRECT_URL_AFTER_OAUTH = "org.riversun.goauth.session_key_redirect_url_after_oauth";
 
 }

@@ -49,249 +49,254 @@ import com.google.api.client.http.HttpResponseException;
  */
 public final class OAuthHandler {
 
-	private static final Logger LOGGER = Logger.getLogger(OAuthHandler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OAuthHandler.class.getName());
 
-	private final String mRedirectUrl;
-	private boolean mForceUseHttps = false;
+    private final String mRedirectUrl;
+    private boolean mForceUseHttps = false;
 
-	public OAuthHandler(String redirectUrl) {
-		mRedirectUrl = redirectUrl;
-	}
+    public OAuthHandler(String redirectUrl) {
+        mRedirectUrl = redirectUrl;
+    }
 
-	/**
-	 * Set force use HTTPS for request
-	 * 
-	 * @param enabled
-	 *            true:forcibly change the currently requested URL to "https"
-	 * @return
-	 */
-	public OAuthHandler setForceUseHttps(boolean enabled) {
-		mForceUseHttps = enabled;
-		return OAuthHandler.this;
-	}
+    /**
+     * Set force use HTTPS for request
+     * 
+     * @param enabled
+     *            true:forcibly change the currently requested URL to "https"
+     * @return
+     */
+    public OAuthHandler setForceUseHttps(boolean enabled) {
+        mForceUseHttps = enabled;
+        return OAuthHandler.this;
+    }
 
-	/**
-	 * Start OAuth2 flow<br>
-	 * <br>
-	 * 1.Get authorization code url<br>
-	 * <br>
-	 * 2.Automatically redirecting to authorization code url(like
-	 * https://accounts.google.com/o/oauth2/auth) for authorization code<br>
-	 * <br>
-	 * (If you have not logged in to Google yet,automatically redirecting to
-	 * authentication page of google account.) <br>
-	 * 3.(On {@link OAuthCallbackServlet}) After redirection, callback servlet
-	 * will receive authorization code<br>
-	 * <br>
-	 * 4.(On {@link OAuthCallbackServlet}) Request token url(like
-	 * https://accounts.google.com/o/oauth2/token) for tokenResponse with
-	 * authorization code.<br>
-	 * <br>
-	 * You can get refresh_token from tokenResponse if you request authorization
-	 * code for the first time with access_type="offline" . <br>
-	 * <br>
-	 * 5.(On {@link OAuthCallbackServlet}) Verify tokenResponse by
-	 * {@link OAuthHandler#getIdTokenAndVerify}<br>
-	 * <br>
-	 * 6.(On {@link OAuthCallbackServlet}) Remember credential(store it in http
-	 * session).
-	 * 
-	 * @param request
-	 * @param response
-	 * @param forceApprovalPrompt
-	 *            if true,force show approval prompt.<br>
-	 *            The authentication page(ex. A page requesting to input userId
-	 *            and password) will be shown.<br>
-	 *            After that you can get a new refresh token
-	 * @throws IOException
-	 * @throws ServletException
-	 */
-	public void doOAuth2Flow(ServletRequest request, ServletResponse response, boolean forceApprovalPrompt) throws IOException, ServletException {
+    /**
+     * Start OAuth2 flow<br>
+     * <br>
+     * 1.Get authorization code url<br>
+     * <br>
+     * 2.Automatically redirecting to authorization code url(like
+     * https://accounts.google.com/o/oauth2/auth) for authorization code<br>
+     * <br>
+     * (If you have not logged in to Google yet,automatically redirecting to
+     * authentication page of google account.) <br>
+     * 3.(On {@link OAuthCallbackServlet}) After redirection, callback servlet
+     * will receive authorization code<br>
+     * <br>
+     * 4.(On {@link OAuthCallbackServlet}) Request token url(like
+     * https://accounts.google.com/o/oauth2/token) for tokenResponse with
+     * authorization code.<br>
+     * <br>
+     * You can get refresh_token from tokenResponse if you request authorization
+     * code for the first time with access_type="offline" . <br>
+     * <br>
+     * 5.(On {@link OAuthCallbackServlet}) Verify tokenResponse by
+     * {@link OAuthHandler#getIdTokenAndVerify}<br>
+     * <br>
+     * 6.(On {@link OAuthCallbackServlet}) Remember credential(store it in http
+     * session).
+     * 
+     * @param request
+     * @param response
+     * @param forceApprovalPrompt
+     *            if true,force show approval prompt.<br>
+     *            The authentication page(ex. A page requesting to input userId
+     *            and password) will be shown.<br>
+     *            After that you can get a new refresh token
+     * @throws IOException
+     * @throws ServletException
+     */
+    public void doOAuth2Flow(ServletRequest request, ServletResponse response, boolean forceApprovalPrompt) throws IOException, ServletException {
 
-		LOGGER.fine("");
+        LOGGER.fine("");
 
-		final HttpServletRequest req = (HttpServletRequest) request;
-		final HttpServletResponse resp = (HttpServletResponse) response;
+        final HttpServletRequest req = (HttpServletRequest) request;
+        final HttpServletResponse resp = (HttpServletResponse) response;
 
-		// generate state token for adressing CSRF
-		final String stateToken = generateStateToken();
+        // generate state token for adressing CSRF
+        final String stateToken = generateStateToken();
 
-		final String currentUrl = getCurrentUrl(req, mForceUseHttps);
+        LOGGER.fine("SET SESSION stateToken=" + stateToken);
+        req.getSession().setAttribute(OAuthConst.SESSION_KEY_OAUTH2_STATE_TOKEN, stateToken);
 
-		LOGGER.fine("SET SESSION stateToken=" + stateToken);
-		req.getSession().setAttribute(OAuthConst.SESSION_KEY_OAUTH2_STATE_TOKEN, stateToken);
+        final String storedRedirectAppUrl = (String) req.getSession().getAttribute(OAuthConst.SESSION_KEY_REDIRECT_URL_AFTER_OAUTH);
 
-		LOGGER.fine("SET SESSION currentUrl=" + currentUrl);
-		req.getSession().setAttribute(OAuthConst.SESSION_KEY_REQUEST_URL, currentUrl);
+        if (storedRedirectAppUrl == null) {
+            
+            final String currentUrl = getCurrentUrl(req, mForceUseHttps);
 
-		final GoogleAuthorizationCodeRequestUrl authorizationCodeRequestUrl =
-				OAuthCommon.createFlow()
-						.newAuthorizationUrl()
-						.setAccessType("offline")
-						.setRedirectUri(mRedirectUrl)
-						.setState(stateToken);
+            LOGGER.fine("SET SESSION currentUrl=" + currentUrl);
+            req.getSession().setAttribute(OAuthConst.SESSION_KEY_REDIRECT_URL_AFTER_OAUTH, currentUrl);
 
-		if (forceApprovalPrompt) {
-			// When you want to confirm every time (set both
-			// setAccessType ("offline") and setApprovalPrompt("force"), you can
-			// get refreshtoken every time.
-			authorizationCodeRequestUrl.setApprovalPrompt("force");
-		}
+        } else {
 
-		final String authUrl = authorizationCodeRequestUrl.toString();
+        }
+        
+        final GoogleAuthorizationCodeRequestUrl authorizationCodeRequestUrl = OAuthCommon.createFlow()
+                .newAuthorizationUrl()
+                .setAccessType("offline")
+                .setRedirectUri(mRedirectUrl)
+                .setState(stateToken);
 
-		LOGGER.fine("redirect to auth url=" + authorizationCodeRequestUrl.toString());
+        if (forceApprovalPrompt) {
+            // When you want to confirm every time (set both
+            // setAccessType ("offline") and setApprovalPrompt("force"), you can
+            // get refreshtoken every time.
+            authorizationCodeRequestUrl.setApprovalPrompt("force");
+        }
 
-		// redirect to authorization code request url
-		resp.sendRedirect(authUrl);
+        final String authUrl = authorizationCodeRequestUrl.toString();
 
-	}
+        LOGGER.fine("redirect to auth url=" + authorizationCodeRequestUrl.toString());
 
-	/**
-	 * generate state
-	 * 
-	 * @return
-	 */
-	private final String generateStateToken() {
-		final String stateToken = new BigInteger(130, new SecureRandom()).toString(32);
-		return stateToken;
-	}
+        // redirect to authorization code request url
+        resp.sendRedirect(authUrl);
 
-	/**
-	 * Returns the currently requested URL
-	 * 
-	 * @param req
-	 * @param forceUseHttps
-	 *            true:forcibly change the currently requested URL to "https"
-	 * @return
-	 */
-	private String getCurrentUrl(final HttpServletRequest req, boolean forceUseHttps) {
+    }
 
-		final String scheme = forceUseHttps ? "https" : req.getScheme();
-		final int currentPort = req.getServerPort();
+    /**
+     * generate state
+     * 
+     * @return
+     */
+    private final String generateStateToken() {
+        final String stateToken = new BigInteger(130, new SecureRandom()).toString(32);
+        return stateToken;
+    }
 
-		final StringBuilder sb = new StringBuilder();
+    /**
+     * Returns the currently requested URL
+     * 
+     * @param req
+     * @param forceUseHttps
+     *            true:forcibly change the currently requested URL to "https"
+     * @return
+     */
+    private String getCurrentUrl(final HttpServletRequest req, boolean forceUseHttps) {
 
-		sb.append(scheme);
-		sb.append("://");
-		sb.append(req.getServerName());
+        final String scheme = forceUseHttps ? "https" : req.getScheme();
+        final int currentPort = req.getServerPort();
 
-		if (currentPort != 80 && currentPort != 443) {
-			sb.append(":");
-			sb.append(currentPort);
-		}
+        final StringBuilder sb = new StringBuilder();
 
-		sb.append(req.getRequestURI());
+        sb.append(scheme);
+        sb.append("://");
+        sb.append(req.getServerName());
 
-		if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
-			sb.append("?");
-			sb.append(req.getQueryString());
-		}
+        if (currentPort != 80 && currentPort != 443) {
+            sb.append(":");
+            sb.append(currentPort);
+        }
 
-		final String currentUrl = sb.toString();
+        sb.append(req.getRequestURI());
 
-		return currentUrl;
-	}
+        if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
+            sb.append("?");
+            sb.append(req.getQueryString());
+        }
 
-	/**
-	 * Get token response by authorization code<br>
-	 * 
-	 * @param code
-	 * @return
-	 */
-	public GoogleTokenResponse getTokenResponseFromCode(String code) {
+        final String currentUrl = sb.toString();
 
-		LOGGER.fine("code=" + code);
+        return currentUrl;
+    }
 
-		GoogleTokenResponse tokenResponse = null;
+    /**
+     * Get token response by authorization code<br>
+     * 
+     * @param code
+     * @return
+     */
+    public GoogleTokenResponse getTokenResponseFromCode(String code) {
 
-		try {
+        LOGGER.fine("code=" + code);
 
-			final GoogleAuthorizationCodeFlow flow = OAuthCommon.createFlow();
+        GoogleTokenResponse tokenResponse = null;
 
-			LOGGER.fine("execute newTokenRequest(" + code + ")");
+        try {
 
-			tokenResponse = flow
-					.newTokenRequest(code)
-					.setRedirectUri(mRedirectUrl)
-					.execute();
+            final GoogleAuthorizationCodeFlow flow = OAuthCommon.createFlow();
 
-		} catch (Exception e) {
+            LOGGER.fine("execute newTokenRequest(" + code + ")");
 
-			e.printStackTrace();
-			LOGGER.warning("Please check whether you are reloading on the OAuth callback servlet");
-			// {
-			// "error" : "invalid_grant",
-			// "error_description" : "Code was already redeemed."
-			// }
+            tokenResponse = flow
+                    .newTokenRequest(code)
+                    .setRedirectUri(mRedirectUrl)
+                    .execute();
 
-			// TODO
-			e.printStackTrace();
+        } catch (Exception e) {
 
-		}
+            e.printStackTrace();
+            LOGGER.warning("Please check whether you are reloading on the OAuth callback servlet");
+            // {
+            // "error" : "invalid_grant",
+            // "error_description" : "Code was already redeemed."
+            // }
 
-		return tokenResponse;
-	}
+            // TODO
+            e.printStackTrace();
 
-	/**
-	 * Parse tokenResponse and returns idToken
-	 * 
-	 * @param tokenResponse
-	 * @return
-	 */
-	public GoogleIdToken getIdToken(GoogleTokenResponse tokenResponse) {
+        }
 
-		LOGGER.fine("");
+        return tokenResponse;
+    }
 
-		if (tokenResponse == null) {
-			return null;
-		}
+    /**
+     * Parse tokenResponse and returns idToken
+     * 
+     * @param tokenResponse
+     * @return
+     */
+    public GoogleIdToken getIdToken(GoogleTokenResponse tokenResponse) {
 
-		// GoogleIdTokenVerifier is Not-thread-safe.
-		// access "https://www.googleapis.com/oauth2/v1/certs" for verification
-		final GoogleIdTokenVerifier idTokenVerifier =
-				new GoogleIdTokenVerifier(OAuthCommon.HTTP_TRANSPORT, OAuthCommon.JSON_FACTORY);
+        LOGGER.fine("");
 
-		GoogleIdToken idToken = null;
+        if (tokenResponse == null) {
+            return null;
+        }
 
-		try {
-			idToken = GoogleIdToken.parse(OAuthCommon.JSON_FACTORY, tokenResponse.getIdToken());
+        // GoogleIdTokenVerifier is Not-thread-safe.
+        // access "https://www.googleapis.com/oauth2/v1/certs" for verification
+        final GoogleIdTokenVerifier idTokenVerifier = new GoogleIdTokenVerifier(OAuthCommon.HTTP_TRANSPORT, OAuthCommon.JSON_FACTORY);
 
-			if (!idTokenVerifier.verify(idToken)) {
-				return null;
-			}
+        GoogleIdToken idToken = null;
 
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-		return idToken;
-	}
+        try {
+            idToken = GoogleIdToken.parse(OAuthCommon.JSON_FACTORY, tokenResponse.getIdToken());
 
-	/**
-	 * Returns true if token revocation occurred
-	 * 
-	 * @param e
-	 * @return
-	 */
-	public boolean isRevocationRelatedException(Exception e) {
+            if (!idTokenVerifier.verify(idToken)) {
+                return null;
+            }
 
-		// TODO:
-		if (e instanceof TokenResponseException) {
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return idToken;
+    }
 
-			if (((TokenResponseException) e).getContent().contains("invalid_grant")) {
-				return true;
-			}
+    /**
+     * Returns true if token revocation occurred
+     * 
+     * @param e
+     * @return
+     */
+    public boolean isRevocationRelatedException(Exception e) {
 
-		}
-		else if (e instanceof HttpResponseException) {
+        // TODO:
+        if (e instanceof TokenResponseException) {
 
-			if (((HttpResponseException) e).getContent().contains("Invalid Credentials")) {
-				return true;
-			}
+            if (((TokenResponseException) e).getContent().contains("invalid_grant")) {
+                return true;
+            }
 
-		}
+        } else if (e instanceof HttpResponseException) {
 
-		return false;
-	}
+            if (((HttpResponseException) e).getContent().contains("Invalid Credentials")) {
+                return true;
+            }
+
+        }
+
+        return false;
+    }
 }
