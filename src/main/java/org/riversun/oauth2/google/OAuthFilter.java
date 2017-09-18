@@ -56,9 +56,9 @@ public abstract class OAuthFilter implements Filter {
         LOGGER.fine("");
 
         // initialize scope for OAuth2
-        OAuthCommon.SCOPES.clear();
-        OAuthCommon.SCOPES.add(OAUTH2_SCOPE_OPENID);
-        OAuthCommon.SCOPES.addAll(getScopes());
+        OAuthUtil.SCOPES.clear();
+        OAuthUtil.SCOPES.add(OAUTH2_SCOPE_OPENID);
+        OAuthUtil.SCOPES.addAll(getScopes());
     }
 
     /**
@@ -131,8 +131,8 @@ public abstract class OAuthFilter implements Filter {
                 chain.doFilter(request, response);
             } catch (HttpResponseException e) {
                 if (oh.isRevocationRelatedException(e)) {
-
                     LOGGER.warning("Refresh token not found or revoked.Force show authorization page.");
+                    //e.printStackTrace();
                     final boolean forceApprovalPrompt = true;
                     oh.doOAuth2Flow(request, response, forceApprovalPrompt);
                 }

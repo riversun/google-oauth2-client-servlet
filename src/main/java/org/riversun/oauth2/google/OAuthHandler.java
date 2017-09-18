@@ -132,7 +132,7 @@ public final class OAuthHandler {
 
         }
         
-        final GoogleAuthorizationCodeRequestUrl authorizationCodeRequestUrl = OAuthCommon.createFlow()
+        final GoogleAuthorizationCodeRequestUrl authorizationCodeRequestUrl = OAuthUtil.createFlow()
                 .newAuthorizationUrl()
                 .setAccessType("offline")
                 .setRedirectUri(mRedirectUrl)
@@ -214,7 +214,7 @@ public final class OAuthHandler {
 
         try {
 
-            final GoogleAuthorizationCodeFlow flow = OAuthCommon.createFlow();
+            final GoogleAuthorizationCodeFlow flow = OAuthUtil.createFlow();
 
             LOGGER.fine("execute newTokenRequest(" + code + ")");
 
@@ -256,12 +256,12 @@ public final class OAuthHandler {
 
         // GoogleIdTokenVerifier is Not-thread-safe.
         // access "https://www.googleapis.com/oauth2/v1/certs" for verification
-        final GoogleIdTokenVerifier idTokenVerifier = new GoogleIdTokenVerifier(OAuthCommon.HTTP_TRANSPORT, OAuthCommon.JSON_FACTORY);
+        final GoogleIdTokenVerifier idTokenVerifier = new GoogleIdTokenVerifier(OAuthUtil.HTTP_TRANSPORT, OAuthUtil.JSON_FACTORY);
 
         GoogleIdToken idToken = null;
 
         try {
-            idToken = GoogleIdToken.parse(OAuthCommon.JSON_FACTORY, tokenResponse.getIdToken());
+            idToken = GoogleIdToken.parse(OAuthUtil.JSON_FACTORY, tokenResponse.getIdToken());
 
             if (!idTokenVerifier.verify(idToken)) {
                 return null;

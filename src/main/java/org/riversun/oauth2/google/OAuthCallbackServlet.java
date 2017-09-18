@@ -31,7 +31,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
@@ -50,6 +49,8 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
 
     private static final Logger LOGGER = Logger.getLogger(OAuthCallbackServlet.class.getName());
 
+    static final String DUMMY_REFRESH_TOKEN = "org.riversun.dummy_refresh_token";
+
     private final Map<String, String> mTempRefreshTokenMap = new ConcurrentHashMap<String, String>();
 
     /**
@@ -62,9 +63,8 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
     /**
      * Save refreshToken of user.<br>
      * <br>
-     * RefreshToken is recommended to be persistent rather than on - memory.
-     * Override and implement this method and describe the saving process of
-     * refreshToken. <br>
+     * RefreshToken is recommended to be persistent rather than on - memory. Override and implement this method and describe the saving process of refreshToken.
+     * <br>
      * 
      * @param userId
      * @param refreshToken
@@ -78,9 +78,8 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
      * Load stored refreshToken of user.<br>
      * <br>
      * <br>
-     * RefreshToken is recommended to be persistent rather than on - memory.
-     * Override and implement this method and read refreshToken from the
-     * persisted area. <br>
+     * RefreshToken is recommended to be persistent rather than on - memory. Override and implement this method and read refreshToken from the persisted area.
+     * <br>
      * 
      * @param userId
      * @return
@@ -91,7 +90,7 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
 
         final String refreshToken;
         if (storedRefreshToken == null) {
-            refreshToken = "dummy_refresh_token";
+            refreshToken = DUMMY_REFRESH_TOKEN;
         } else {
             refreshToken = storedRefreshToken;
         }
@@ -160,7 +159,8 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
 
         final Payload payload = idToken.getPayload();
 
-        sessionScope(req, OAuthConst.SESSION_KEY_ID_TOKEN, idToken);
+        // Since "idtoken/payload" is not serializable, so should not store it in the session
+        // for considering that you want to be persistent it in the future.
 
         // An identifier for the user, unique among all Google accounts and
         // never reused.
@@ -181,22 +181,30 @@ public abstract class OAuthCallbackServlet extends OAuthBaseServlet {
             saveRefreshTokenFor(userId, _refreshToken);
         }
 
-        LOGGER.fine("use refresh token refreshToken=" + tokenResponse.getRefreshToken());
+        final String refreshToken = loadRefreshTokenFor(userId);
+
+        LOGGER.fine("use refresh token refreshToken=" + _refreshToken);
 
         final String accessToken = tokenResponse.getAccessToken();
 
-        final GoogleCredential credential = new GoogleCredential.Builder()
-                .setTransport(OAuthCommon.HTTP_TRANSPORT)
-                .setJsonFactory(OAuthCommon.JSON_FACTORY)
-                .setClientSecrets(OAuthSecrets.getClientSecrets())
-                .build()
-                .setAccessToken(accessToken)
-                // If refreshToken is set, new access token will be
-                // retrieved(renewed) properly
-                // even if the old access token expires.
-                .setRefreshToken(loadRefreshTokenFor(userId));
+        LOGGER.fine("Since it is necessary to create a new credential, delete the existing credential in the session");
 
-        sessionScope(req, OAuthConst.SESSION_KEY_CREDENTIAL, credential);
+        /**
+         * Since it is necessary to create a new credential, clear the existing credential in the session <br>
+         * {@link OAuthSession#getCredential}
+         */
+        sessionScope(req, OAuthConst.SESSION_KEY_CREDENTIAL, null);
+
+        // Store access token in the session
+        sessionScope(req, OAuthConst.SESSION_KEY_ACCESS_TOKEN, accessToken);
+
+        if (refreshToken == null || OAuthCallbackServlet.DUMMY_REFRESH_TOKEN.equals(refreshToken)) {
+            sessionScope(req, OAuthConst.SESSION_KEY_REFRESH_TOKEN, null);
+        } else {
+            // Store refresh token in the session
+            sessionScope(req, OAuthConst.SESSION_KEY_REFRESH_TOKEN, refreshToken);
+        }
+
         sessionScope(req, OAuthConst.SESSION_KEY_OAUTH2_DONE, Boolean.TRUE);
 
         String redirectPath = (String) sessionScope(req, OAuthConst.SESSION_KEY_REDIRECT_URL_AFTER_OAUTH);

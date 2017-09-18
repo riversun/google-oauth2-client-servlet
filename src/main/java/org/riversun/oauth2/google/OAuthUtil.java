@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -38,7 +39,8 @@ import com.google.api.client.json.jackson2.JacksonFactory;
  * @author Tom Misawa (riversun.org@gmail.com)
  *
  */
-final class OAuthCommon {
+public final class OAuthUtil {
+    private static final Logger LOGGER = Logger.getLogger(OAuthUtil.class.getName());
 
     // SCOPE
     static final List<String> SCOPES = new CopyOnWriteArrayList<String>();
@@ -58,4 +60,22 @@ final class OAuthCommon {
                         .build();
     }
 
+    // Thread-safed
+    public static final GoogleCredential createCredential(String accessToken, String refreshToken) throws IOException {
+
+        LOGGER.fine("accessToken=" + accessToken + " refreshToken=" + refreshToken);
+
+        final GoogleCredential credential = new GoogleCredential.Builder()
+
+                .setTransport(OAuthUtil.HTTP_TRANSPORT)
+                .setJsonFactory(OAuthUtil.JSON_FACTORY)
+                .setClientSecrets(OAuthSecrets.getClientSecrets())
+                .build()
+                .setAccessToken(accessToken)
+                // If refreshToken is set, new access token will be
+                // retrieved(renewed) properly
+                // even if the old access token expires.
+                .setRefreshToken(refreshToken);
+        return credential;
+    }
 }

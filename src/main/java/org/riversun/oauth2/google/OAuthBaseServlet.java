@@ -25,6 +25,7 @@ package org.riversun.oauth2.google;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -125,7 +126,7 @@ public class OAuthBaseServlet extends HttpServlet {
 		return req.getAttribute(name);
 	}
 
-	protected void sessionScope(HttpServletRequest req, String name, Object value) {
+	protected void sessionScope(HttpServletRequest req, String name, Serializable value) {
 		HttpSession session = req.getSession(true);
 		if (value != null) {
 			session.setAttribute(name, value);

@@ -31,7 +31,10 @@ package org.riversun.oauth2.google;
 public final class OAuthConst {
 
     static final String SESSION_KEY_CREDENTIAL = "org.riversun.goauth.session_key_credential";
-    static final String SESSION_KEY_ID_TOKEN = "org.riversun.goauth.session_key_id_token";
+
+    static final String SESSION_KEY_ACCESS_TOKEN = "org.riversun.goauth.session_key_access_token";
+    static final String SESSION_KEY_REFRESH_TOKEN = "org.riversun.goauth.session_key_refresh_token";
+
     static final String SESSION_KEY_UNIQUE_USER_ID = "org.riversun.goauth.session_key_payload_sub";
 
     static final String SESSION_KEY_OAUTH2_STATE_TOKEN = "org.riversun.goauth.session_key_oauth2_state_token";

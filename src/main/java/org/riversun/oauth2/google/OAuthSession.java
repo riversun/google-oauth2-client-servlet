@@ -22,10 +22,11 @@
  */
 package org.riversun.oauth2.google;
 
+import java.io.IOException;
+
 import javax.servlet.http.HttpServletRequest;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 /**
  * Get OAuth 2 status and authentication result stored in http session<br>
@@ -54,7 +55,8 @@ public class OAuthSession {
     }
 
     /**
-     * set URL to redirect after OAuth2 flow
+     * Set URL to redirect after OAuth2 flow <br>
+     * This url will be cleared after OAuth2 callback received.
      * 
      * @param req
      * @param url
@@ -65,25 +67,74 @@ public class OAuthSession {
     }
 
     /**
-     * Returns credential
+     * Returns credential <br>
+     * <br>
+     * <br>
+     * Why "Deprecated"<br>
+     * This method store the "GoogleCredential" object to the session and reuses it, <br>
+     * but since the credential object is not "serializable",<br>
+     * considering of persistence of httpSession in the future<br>
+     * you should not store "not-serializable" object in the session. <br>
+     * <br>
+     * <br>
+     * Recommendation<br>
+     * You should create "GoogleCredential" from access_token and refresh_token in the app lifecycle.<br>
+     * {@link OAuthSession#createCredential(HttpServletRequest)}
      * 
      * @param req
      * @return
+     * @throws IOException
      */
-    public GoogleCredential getCredential(HttpServletRequest req) {
-        final GoogleCredential credential = (GoogleCredential) req.getSession().getAttribute(OAuthConst.SESSION_KEY_CREDENTIAL);
+    @Deprecated
+    public GoogleCredential getCredential(HttpServletRequest req) throws IOException {
+        GoogleCredential credential = (GoogleCredential) req.getSession().getAttribute(OAuthConst.SESSION_KEY_CREDENTIAL);
+
+        if (credential == null) {
+
+            final String accessToken = getAccessToken(req);
+            final String refreshToken = getRefreshToken(req);
+
+            // create credential
+            credential = OAuthUtil.createCredential(accessToken, refreshToken);
+            req.getSession().setAttribute(OAuthConst.SESSION_KEY_CREDENTIAL, credential);
+        }
+
         return credential;
     }
 
     /**
-     * Returns idToken
+     * Create credential from accessToken/refreeshToken store in the session
+     * 
+     * @param req
+     * @return
+     * @throws IOException
+     */
+    public GoogleCredential createCredential(HttpServletRequest req) throws IOException {
+        final GoogleCredential credential = OAuthUtil.createCredential(
+                getAccessToken(req),
+                getRefreshToken(req));
+        return credential;
+
+    }
+
+    /**
+     * Returns refresh_token stored in the session
      * 
      * @param req
      * @return
      */
-    public GoogleIdToken getIdToken(HttpServletRequest req) {
-        final GoogleIdToken idToken = (GoogleIdToken) req.getSession().getAttribute(OAuthConst.SESSION_KEY_ID_TOKEN);
-        return idToken;
+    public String getRefreshToken(HttpServletRequest req) {
+        return (String) req.getSession().getAttribute(OAuthConst.SESSION_KEY_REFRESH_TOKEN);
+    }
+
+    /**
+     * Returns access_token stored in the session
+     * 
+     * @param req
+     * @return
+     */
+    public String getAccessToken(HttpServletRequest req) {
+        return (String) req.getSession().getAttribute(OAuthConst.SESSION_KEY_ACCESS_TOKEN);
     }
 
     /**

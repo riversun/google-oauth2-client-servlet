@@ -48,8 +48,8 @@ public class OAuthSecrets {
     }
 
     public static void setClientSecrets(String relativeFilePath) throws IOException {
-        final InputStream is = OAuthCommon.class.getResourceAsStream(relativeFilePath);
-        sGoogleClientSecrets = GoogleClientSecrets.load(OAuthCommon.JSON_FACTORY, new InputStreamReader(is));
+        final InputStream is = OAuthUtil.class.getResourceAsStream(relativeFilePath);
+        sGoogleClientSecrets = GoogleClientSecrets.load(OAuthUtil.JSON_FACTORY, new InputStreamReader(is));
     }
 
     public static GoogleClientSecrets getClientSecrets() throws IOException {
