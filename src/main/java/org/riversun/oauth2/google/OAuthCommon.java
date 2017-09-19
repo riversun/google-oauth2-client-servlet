@@ -25,7 +25,6 @@ package org.riversun.oauth2.google;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.http.HttpTransport;
@@ -40,22 +39,22 @@ import com.google.api.client.json.jackson2.JacksonFactory;
  */
 final class OAuthCommon {
 
-    // SCOPE
-    static final List<String> SCOPES = new CopyOnWriteArrayList<String>();
+	// SCOPE
+	static final List<String> SCOPES = new CopyOnWriteArrayList<String>();
 
-    // Thread-safed
-    static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+	// Thread-safed
+	static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
-    // Thread-safed
-    static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+	// Thread-safed
+	static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
-    static final GoogleAuthorizationCodeFlow createFlow() throws IOException {
-        return new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT,
-                JSON_FACTORY,
-                OAuthSecrets.getClientSecrets(),
-                SCOPES)
-                        .build();
-    }
+	static final GoogleAuthorizationCodeFlow createFlow() throws IOException {
+		return new GoogleAuthorizationCodeFlow.Builder(
+				HTTP_TRANSPORT,
+				JSON_FACTORY,
+				OAuthSecrets.getClientSecrets(),
+				SCOPES)
+				.build();
+	}
 
 }
