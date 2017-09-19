@@ -41,21 +41,26 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
  */
 public class OAuthSecrets {
 
-    private static GoogleClientSecrets sGoogleClientSecrets = null;
+	private static GoogleClientSecrets sGoogleClientSecrets = null;
 
-    public static void setClientSecrets(GoogleClientSecrets googleClientSecrets) {
-        sGoogleClientSecrets = googleClientSecrets;
-    }
+	public static void setClientSecrets(GoogleClientSecrets googleClientSecrets) {
+		sGoogleClientSecrets = googleClientSecrets;
+	}
 
-    public static void setClientSecrets(String relativeFilePath) throws IOException {
-        final InputStream is = OAuthUtil.class.getResourceAsStream(relativeFilePath);
-        sGoogleClientSecrets = GoogleClientSecrets.load(OAuthUtil.JSON_FACTORY, new InputStreamReader(is));
-    }
+	public static void setClientSecrets(String relativeFilePath) throws IOException {
+		final InputStream is = OAuthUtil.class.getResourceAsStream(relativeFilePath);
+		try {
+			sGoogleClientSecrets = GoogleClientSecrets.load(OAuthUtil.JSON_FACTORY, new InputStreamReader(is));
+		} catch (java.lang.NullPointerException e) {
+			throw new RuntimeException("'client_secret.json' not found! Please put your 'client_secret.json' at '" + relativeFilePath + "' "
+					+ "or call OAuthSecrets#setClientSecrets(GoogleClientSecrets googleClientSecrets) on initialize.");
+		}
+	}
 
-    public static GoogleClientSecrets getClientSecrets() throws IOException {
-        if (sGoogleClientSecrets == null) {
-            setClientSecrets("/client_secret.json");
-        }
-        return sGoogleClientSecrets;
-    }
+	public static GoogleClientSecrets getClientSecrets() throws IOException {
+		if (sGoogleClientSecrets == null) {
+			setClientSecrets("/client_secret.json");
+		}
+		return sGoogleClientSecrets;
+	}
 }

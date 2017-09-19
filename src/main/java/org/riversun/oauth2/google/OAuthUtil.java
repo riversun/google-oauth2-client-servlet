@@ -40,42 +40,44 @@ import com.google.api.client.json.jackson2.JacksonFactory;
  *
  */
 public final class OAuthUtil {
-    private static final Logger LOGGER = Logger.getLogger(OAuthUtil.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(OAuthUtil.class.getName());
 
-    // SCOPE
-    static final List<String> SCOPES = new CopyOnWriteArrayList<String>();
+	// SCOPE
+	static final List<String> SCOPES = new CopyOnWriteArrayList<String>();
 
-    // Thread-safed
-    static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+	// Thread-safed
+	static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
-    // Thread-safed
-    static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+	// Thread-safed
+	static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
-    static final GoogleAuthorizationCodeFlow createFlow() throws IOException {
-        return new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT,
-                JSON_FACTORY,
-                OAuthSecrets.getClientSecrets(),
-                SCOPES)
-                        .build();
-    }
+	static final GoogleAuthorizationCodeFlow createFlow() throws IOException {
 
-    // Thread-safed
-    public static final GoogleCredential createCredential(String accessToken, String refreshToken) throws IOException {
+		return new GoogleAuthorizationCodeFlow.Builder(
+				HTTP_TRANSPORT,
+				JSON_FACTORY,
+				OAuthSecrets.getClientSecrets(),
+				SCOPES)
+				.build();
 
-        LOGGER.fine("accessToken=" + accessToken + " refreshToken=" + refreshToken);
+	}
 
-        final GoogleCredential credential = new GoogleCredential.Builder()
+	// Thread-safed
+	public static final GoogleCredential createCredential(String accessToken, String refreshToken) throws IOException {
 
-                .setTransport(OAuthUtil.HTTP_TRANSPORT)
-                .setJsonFactory(OAuthUtil.JSON_FACTORY)
-                .setClientSecrets(OAuthSecrets.getClientSecrets())
-                .build()
-                .setAccessToken(accessToken)
-                // If refreshToken is set, new access token will be
-                // retrieved(renewed) properly
-                // even if the old access token expires.
-                .setRefreshToken(refreshToken);
-        return credential;
-    }
+		LOGGER.fine("accessToken=" + accessToken + " refreshToken=" + refreshToken);
+
+		final GoogleCredential credential = new GoogleCredential.Builder()
+
+				.setTransport(OAuthUtil.HTTP_TRANSPORT)
+				.setJsonFactory(OAuthUtil.JSON_FACTORY)
+				.setClientSecrets(OAuthSecrets.getClientSecrets())
+				.build()
+				.setAccessToken(accessToken)
+				// If refreshToken is set, new access token will be
+				// retrieved(renewed) properly
+				// even if the old access token expires.
+				.setRefreshToken(refreshToken);
+		return credential;
+	}
 }
