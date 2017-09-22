@@ -204,7 +204,7 @@ Create credential if you have not created it.
     1. click Save
     <img src="https://riversun.github.io/img/goauth2/lib_oauth2_callback_url.png">
 
-1. download **client_secret.json" from https://console.cloud.google.com/apis/credentials
+1. download **client_secret.json** from https://console.cloud.google.com/apis/credentials
 <img src="https://riversun.github.io/img/goauth2/lib_oauth2_download.png">
 
 1. Rename downloaded file to **client_secret.json** and save it on the top of the src folder.
